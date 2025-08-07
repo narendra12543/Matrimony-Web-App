@@ -1,69 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Email Verification</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f9f9f9; color: #333; }
-    .container { max-width: 500px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 32px; }
-    h1 { color: #6c63ff; }
-    .verify-btn { display: inline-block; margin-top: 24px; padding: 12px 32px; background: #6c63ff; color: #fff; border-radius: 4px; text-decoration: none; font-weight: bold; border: none; cursor: pointer; }
-    .footer { margin-top: 32px; font-size: 0.9em; color: #888; }
-    .message { margin-top: 24px; font-size: 1.1em; }
-    .success { color: #388e3c; }
-    .error { color: #d32f2f; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Email Verification</h1>
-    <p>Thank you for registering with our matrimonial platform!</p>
-    <p>Please click the button below to verify your email address and activate your account:</p>
-    <button class="verify-btn" id="verifyBtn">Verify Email</button>
-    <div id="message" class="message"></div>
-    <p>If you did not create an account, you can safely ignore this email.</p>
-    <div class="footer">
-      &copy; <span id="year"></span> ESMatrimonial. All rights reserved.
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Verification</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f9f9f9;
+        color: #333;
+      }
+      .container {
+        max-width: 500px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+        padding: 32px;
+      }
+      h1 {
+        color: #6c63ff;
+      }
+      .verify-btn {
+        display: inline-block;
+        margin-top: 24px;
+        padding: 12px 32px;
+        background: #6c63ff;
+        color: #fff;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+      }
+      .footer {
+        margin-top: 32px;
+        font-size: 0.9em;
+        color: #888;
+      }
+      .message {
+        margin-top: 24px;
+        font-size: 1.1em;
+      }
+      .success {
+        color: #388e3c;
+      }
+      .error {
+        color: #d32f2f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Email Verification</h1>
+      <p>Thank you for registering with our matrimonial platform!</p>
+      <p>
+        Please click the button below to verify your email address and activate
+        your account:
+      </p>
+      <button class="verify-btn" id="verifyBtn">Verify Email</button>
+      <div id="message" class="message"></div>
+      <p>If you did not create an account, you can safely ignore this email.</p>
+      <div class="footer">
+        &copy; <span id="year"></span> ESMatrimonial. All rights reserved.
+      </div>
     </div>
-  </div>
-  <script>
-    // Set year
-    document.getElementById('year').textContent = new Date().getFullYear();
+    <script>
+      // Set year
+      document.getElementById("year").textContent = new Date().getFullYear();
 
-    // Extract token from URL
-    function getTokenFromUrl() {
-      const match = window.location.pathname.match(/\/verify-email\/(.+)$/);
-      return match ? match[1] : null;
-    }
-
-    document.getElementById('verifyBtn').addEventListener('click', async function() {
-      const token = getTokenFromUrl();
-      const messageDiv = document.getElementById('message');
-      if (!token) {
-        messageDiv.textContent = 'Invalid verification link.';
-        messageDiv.className = 'message error';
-        return;
+      // Extract token from URL
+      function getTokenFromUrl() {
+        const match = window.location.pathname.match(/\/verify-email\/(.+)$/);
+        return match ? match[1] : null;
       }
-      messageDiv.textContent = 'Verifying...';
-      messageDiv.className = 'message';
-      try {
-        const response = await fetch(`/api/v1/auth/verify-email/${token}`, {
-          method: 'GET',
+
+      document
+        .getElementById("verifyBtn")
+        .addEventListener("click", async function () {
+          const token = getTokenFromUrl();
+          const messageDiv = document.getElementById("message");
+          if (!token) {
+            messageDiv.textContent = "Invalid verification link.";
+            messageDiv.className = "message error";
+            return;
+          }
+          messageDiv.textContent = "Verifying...";
+          messageDiv.className = "message";
+          try {
+            const response = await fetch(`/api/v1/auth/verify-email/${token}`, {
+              method: "GET",
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+              messageDiv.textContent =
+                data.message ||
+                "Email verified successfully! You can now login.";
+              messageDiv.className = "message success";
+            } else {
+              messageDiv.textContent = data.message || "Verification failed.";
+              messageDiv.className = "message error";
+            }
+          } catch (err) {
+            messageDiv.textContent = "An error occurred. Please try again.";
+            messageDiv.className = "message error";
+          }
         });
-        const data = await response.json();
-        if (response.ok && data.success) {
-          messageDiv.textContent = data.message || 'Email verified successfully! You can now login.';
-          messageDiv.className = 'message success';
-        } else {
-          messageDiv.textContent = data.message || 'Verification failed.';
-          messageDiv.className = 'message error';
-        }
-      } catch (err) {
-        messageDiv.textContent = 'An error occurred. Please try again.';
-        messageDiv.className = 'message error';
-      }
-    });
-  </script>
-</body>
-</html> 
+    </script>
+  </body>
+</html>

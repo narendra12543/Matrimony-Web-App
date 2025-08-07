@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import Header from './User_Dashboard/Header';
-import Sidebar from './User_Dashboard/Sidebar';
-import { Outlet, useLocation } from 'react-router-dom';
+import React, { useState } from "react";
+import Header from "./User_Dashboard/Header";
+import Sidebar from "./User_Dashboard/Sidebar";
+import { Outlet, useLocation } from "react-router-dom";
 
 const UserLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const isChatPage = location.pathname === '/chat';
+  const isChatPage = location.pathname === "/chat";
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       {/* Common Header */}
       <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
       <div className="flex flex-1 overflow-hidden relative pt-16">
@@ -29,9 +29,13 @@ const UserLayout = () => {
           </div>
         )}
         {/* Main Content Area */}
-        <div className={`flex-1 overflow-y-auto w-full lg:w-auto transition-all duration-300 custom-scrollbar ${
-          isChatPage ? 'p-0 bg-transparent' : 'p-4 lg:p-6 bg-white'
-        }`}>
+        <div
+          className={`flex-1 h-full min-h-0 overflow-y-auto w-full lg:w-auto transition-all duration-300 custom-scrollbar ${
+            isChatPage
+              ? "p-0 bg-transparent dark:bg-transparent"
+              : "bg-white dark:bg-gray-900"
+          }`}
+        >
           <Outlet />
         </div>
       </div>
@@ -39,4 +43,4 @@ const UserLayout = () => {
   );
 };
 
-export default UserLayout; 
+export default UserLayout;

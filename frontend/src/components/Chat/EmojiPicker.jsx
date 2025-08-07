@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import EmojiPickerReact from 'emoji-picker-react';
-import { Smile, X } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import EmojiPickerReact from "emoji-picker-react";
+import { Smile, X } from "lucide-react";
 
-const EmojiPicker = ({ onEmojiSelect, isOpen, onToggle, position = 'top' }) => {
+const EmojiPicker = ({ onEmojiSelect, isOpen, onToggle, position = "top" }) => {
   const pickerRef = useRef(null);
 
   useEffect(() => {
@@ -14,11 +14,11 @@ const EmojiPicker = ({ onEmojiSelect, isOpen, onToggle, position = 'top' }) => {
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onToggle]);
 
@@ -34,9 +34,9 @@ const EmojiPicker = ({ onEmojiSelect, isOpen, onToggle, position = 'top' }) => {
         type="button"
         onClick={() => onToggle(!isOpen)}
         className={`p-2 rounded-lg transition-colors ${
-          isOpen 
-            ? 'bg-rose-100 text-rose-600' 
-            : 'hover:bg-gray-100 text-gray-500'
+          isOpen
+            ? "bg-rose-100 text-rose-600"
+            : "hover:bg-gray-100 text-gray-500"
         }`}
       >
         <Smile className="w-5 h-5" />
@@ -50,13 +50,15 @@ const EmojiPicker = ({ onEmojiSelect, isOpen, onToggle, position = 'top' }) => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`absolute z-50 ${
-              position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
-            } right-0`}
+            className={`absolute z-50 w-full sm:w-80 md:w-96 ${
+              position === "top" ? "bottom-full mb-2" : "top-full mt-2"
+            } right-0 sm:left-auto sm:right-0`}
           >
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
               <div className="flex items-center justify-between p-3 border-b border-gray-200">
-                <h3 className="text-sm font-medium text-gray-900">Choose an emoji</h3>
+                <h3 className="text-sm font-medium text-black">
+                  Choose an emoji
+                </h3>
                 <button
                   onClick={() => onToggle(false)}
                   className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -66,8 +68,8 @@ const EmojiPicker = ({ onEmojiSelect, isOpen, onToggle, position = 'top' }) => {
               </div>
               <EmojiPickerReact
                 onEmojiClick={handleEmojiClick}
-                width={320}
-                height={400}
+                width="100%"
+                height={300}
                 previewConfig={{ showPreview: false }}
                 searchPlaceHolder="Search emojis..."
                 skinTonesDisabled={true}
@@ -81,4 +83,3 @@ const EmojiPicker = ({ onEmojiSelect, isOpen, onToggle, position = 'top' }) => {
 };
 
 export default EmojiPicker;
-      

@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import logger from "../utils/logger.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "adminsecret";
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = "7d";
 
 export const adminRegister = async (req, res) => {

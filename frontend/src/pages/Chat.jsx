@@ -1,22 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
-import ChatSidebar from '../components/Chat/ChatSidebar';
-import ChatWindow from '../components/Chat/ChatWindow';
-import InPageNotificationContainer from '../components/Chat/InPageNotification';
-import UserSearch from '../components/Chat/UserSearch';
-import NotificationSettings from '../components/Chat/NotificationSettings';
-import { useSocket } from '../contexts/Chat/SocketContext';
-import { useNotifications } from '../contexts/Chat/NotificationContext';
-import { ArrowLeft } from 'lucide-react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import { useLocation, useParams } from "react-router-dom";
+import ChatSidebar from "../components/Chat/ChatSidebar";
+import ChatWindow from "../components/Chat/ChatWindow";
+import InPageNotificationContainer from "../components/Chat/InPageNotification";
+import UserSearch from "../components/Chat/UserSearch";
+import NotificationSettings from "../components/Chat/NotificationSettings";
+import { useSocket } from "../contexts/Chat/SocketContext";
+import { useNotifications } from "../contexts/Chat/NotificationContext";
+import { ArrowLeft } from "lucide-react";
+import axios from "axios";
 
 const Chat = () => {
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showUserSearch, setShowUserSearch] = useState(false);
-  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-  const [prefillMessage, setPrefillMessage] = useState('');
+  const [showNotificationSettings, setShowNotificationSettings] =
+    useState(false);
+  const [prefillMessage, setPrefillMessage] = useState("");
   const location = useLocation();
   const { userId: routeUserId } = useParams();
   const { socket } = useSocket();
@@ -32,13 +33,13 @@ const Chat = () => {
     if (!loading && chats.length > 0) {
       // Prefer route param over query param
       const params = new URLSearchParams(location.search);
-      const queryUserId = params.get('userId');
-      const prefill = params.get('prefill');
+      const queryUserId = params.get("userId");
+      const prefill = params.get("prefill");
       const userId = routeUserId || queryUserId;
       if (userId) {
         // Try to find existing chat
-        let chat = chats.find(c =>
-          c.participants.some(p => p._id === userId)
+        let chat = chats.find((c) =>
+          c.participants.some((p) => p._id === userId)
         );
         if (chat) {
           setSelectedChat(chat);
@@ -53,13 +54,17 @@ const Chat = () => {
 
   const createChatWithUser = async (userId, prefill) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post('http://localhost:5000/api/v1/chat', { participantId: userId }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setChats(prev => {
+      const token = localStorage.getItem("token");
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/chat`,
+        { participantId: userId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setChats((prev) => {
         // Prevent duplicate chats
-        if (prev.some(chat => chat._id === res.data._id)) return prev;
+        if (prev.some((chat) => chat._id === res.data._id)) return prev;
         return [res.data, ...prev];
       });
       setSelectedChat(res.data);
@@ -71,55 +76,61 @@ const Chat = () => {
 
   useEffect(() => {
     if (socket) {
-      socket.on('chat-updated', handleChatUpdated);
+      socket.on("chat-updated", handleChatUpdated);
 
       return () => {
-        socket.off('chat-updated');
+        socket.off("chat-updated");
       };
     }
   }, [socket]);
 
   const fetchChats = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/v1/chat');
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/v1/chat`
+      );
       setChats(response.data);
     } catch (error) {
-      console.error('Error fetching chats:', error);
+      console.error("Error fetching chats:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleChatUpdated = ({ chatId, lastMessage }) => {
-    setChats(prevChats => 
-      prevChats.map(chat => 
-        chat._id === chatId 
-          ? { ...chat, lastMessage, updatedAt: new Date() }
-          : chat
-      ).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    setChats((prevChats) =>
+      prevChats
+        .map((chat) =>
+          chat._id === chatId
+            ? { ...chat, lastMessage, updatedAt: new Date() }
+            : chat
+        )
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     );
   };
 
   const handleChatSelect = (chat) => {
     setSelectedChat(chat);
     if (socket) {
-      socket.emit('join-chat', chat._id);
+      socket.emit("join-chat", chat._id);
     }
   };
 
   const handleNewChat = (newChat) => {
-    setChats(prevChats => [newChat, ...prevChats]);
+    setChats((prevChats) => [newChat, ...prevChats]);
     setSelectedChat(newChat);
   };
 
   const handleMessageSent = (message) => {
     // Update chat list when user sends a message
-    setChats(prevChats => 
-      prevChats.map(chat => 
-        chat._id === message.chat 
-          ? { ...chat, lastMessage: message, updatedAt: new Date() }
-          : chat
-      ).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    setChats((prevChats) =>
+      prevChats
+        .map((chat) =>
+          chat._id === message.chat
+            ? { ...chat, lastMessage: message, updatedAt: new Date() }
+            : chat
+        )
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     );
   };
 
@@ -129,19 +140,19 @@ const Chat = () => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+      <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br to-pink-900 dark:from-gray-900 dark:to-gray-800">
         <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-lg overflow-hidden">
+    <div className="h-full flex bg-gradient-to-br to-slate-900 dark:from-gray-900 dark:to-gray-800 rounded-lg overflow-hidden">
       {/* Desktop Layout - Sidebar + Chat */}
       <div className="hidden lg:flex w-full">
         {/* Sidebar */}
         <div className="w-80 lg:w-96 relative border-r border-white/10">
-          <ChatSidebar 
+          <ChatSidebar
             chats={chats}
             selectedChat={selectedChat}
             onChatSelect={handleChatSelect}
@@ -150,10 +161,10 @@ const Chat = () => {
             onShowNotificationSettings={setShowNotificationSettings}
           />
         </div>
-        
+
         {/* Main chat area */}
         <div className="flex-1 relative min-w-0">
-          <ChatWindow 
+          <ChatWindow
             selectedChat={selectedChat}
             onMessageSent={handleMessageSent}
             onlineUsers={onlineUsers}
@@ -167,7 +178,7 @@ const Chat = () => {
         {selectedChat ? (
           // Full screen chat window
           <div className="h-full relative">
-            <ChatWindow 
+            <ChatWindow
               selectedChat={selectedChat}
               onMessageSent={handleMessageSent}
               onlineUsers={onlineUsers}
@@ -178,7 +189,7 @@ const Chat = () => {
         ) : (
           // Full screen chat list
           <div className="h-full">
-            <ChatSidebar 
+            <ChatSidebar
               chats={chats}
               selectedChat={selectedChat}
               onChatSelect={handleChatSelect}
@@ -191,7 +202,7 @@ const Chat = () => {
       </div>
 
       {/* In-page notifications */}
-      <InPageNotificationContainer 
+      <InPageNotificationContainer
         notifications={inPageNotifications}
         removeNotification={removeInPageNotification}
       />
@@ -203,7 +214,7 @@ const Chat = () => {
         onChatCreate={handleNewChat}
       />
 
-      <NotificationSettings 
+      <NotificationSettings
         isOpen={showNotificationSettings}
         onClose={() => setShowNotificationSettings(false)}
       />

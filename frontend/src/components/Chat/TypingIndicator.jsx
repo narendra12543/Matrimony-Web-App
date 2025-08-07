@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from "framer-motion";
 
 const TypingIndicator = ({ typingUsers }) => {
   if (typingUsers.length === 0) return null;
@@ -9,7 +9,7 @@ const TypingIndicator = ({ typingUsers }) => {
     } else if (typingUsers.length === 2) {
       return `${typingUsers[0].name} and ${typingUsers[1].name} are typing...`;
     } else {
-      return 'Several people are typing...';
+      return "Several people are typing...";
     }
   };
 
@@ -33,12 +33,12 @@ const TypingIndicator = ({ typingUsers }) => {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-sm text-gray-500 italic font-medium"
+            className="text-sm text-black italic font-medium"
           >
             {getTypingText()}
           </motion.p>
         </div>
-        
+
         {/* CSS for typing dots animation */}
         <style jsx>{`
           .typing-dot {
@@ -48,17 +48,19 @@ const TypingIndicator = ({ typingUsers }) => {
             border-radius: 50%;
             animation: typing 1.4s infinite ease-in-out;
           }
-          
+
           .typing-dot:nth-child(1) {
             animation-delay: -0.32s;
           }
-          
+
           .typing-dot:nth-child(2) {
             animation-delay: -0.16s;
           }
-          
+
           @keyframes typing {
-            0%, 80%, 100% {
+            0%,
+            80%,
+            100% {
               transform: scale(0.8);
               opacity: 0.5;
             }

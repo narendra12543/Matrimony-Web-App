@@ -12,7 +12,7 @@ A comprehensive backend for a modern matrimonial platform, built with Node.js, E
 - **Subscription Plans**: Paid plans with Stripe/Razorpay integration.
 - **Admin Dashboard**: User management, verification, and analytics.
 - **Security**: Helmet, CORS, rate limiting, and role-based access control.
-- **File Uploads**: Cloudinary for images/videos, Multer for handling uploads.
+- **File Uploads**: Local file storage with Multer for handling uploads.
 - **Email Service**: Nodemailer/SendGrid for notifications and verification.
 - **Logging**: Morgan and Winston for request and error logging.
 
@@ -23,7 +23,7 @@ A comprehensive backend for a modern matrimonial platform, built with Node.js, E
 - **Socket.io** (real-time)
 - **WebRTC** (video/audio calls)
 - **Razorpay** (payments)
-- **Cloudinary** (file storage)
+- **Local File Storage** (file storage)
 - **Nodemailer** (email)
 - **Multer**, **bcryptjs**, **validator**, **dotenv**, **helmet**, **morgan**, **winston**
 
@@ -38,7 +38,6 @@ matrimony-backend/
 ├── README.md
 ├── config/
 │   ├── db.js
-│   ├── cloudinary.js
 │   ├── passport.js
 │   └── constants.js
 ├── controllers/
@@ -198,7 +197,7 @@ matrimony-backend/
    npm install
    ```
 3. **Configure environment variables**
-   - Copy `.env.example` to `.env` and fill in your credentials (MongoDB URI, JWT secret,Razorpay keys, Cloudinary, etc.)
+   - Copy `.env.example` to `.env` and fill in your credentials (MongoDB URI, JWT secret, Razorpay keys, etc.)
 4. **Run the server**
    ```sh
    npm start
@@ -228,10 +227,10 @@ For security reasons, the `.env` file is not included in the repository. You mus
       ADMIN_JWT_SECRET=your_admin_jwt_secret
       RAZORPAY_KEY=your_razorpay_key
       RAZORPAY_SECRET=your_razorpay_secret
-      CLOUDINARY_URL=your_cloudinary_url
+      # File storage is now local - no external dependencies needed
 
 - Replace `your_mongodb_connection_string` with your MongoDB URI.
 - Replace `your_jwt_secret` and `your_admin_jwt_secret` with strong, random strings.
-- Replace Cloudinary values if you use image uploads.
+- File uploads are now handled locally - no external storage needed.
 
 **Note:** Never commit your `.env` file to version control.

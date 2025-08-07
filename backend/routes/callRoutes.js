@@ -3,6 +3,7 @@
 import express from 'express';
 import Call from '../models/Call.js';
 import { authenticate } from '../middleware/auth.js';
+import { checkFeatureAccess, checkCallFeatureAccess } from '../middleware/subscriptionCheck.js';
 import crypto from 'crypto';
 
 const router = express.Router();
@@ -43,7 +44,7 @@ router.get('/missed', authenticate, async (req, res) => {
 });
 
 // Log a new call or update call status
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, checkCallFeatureAccess, async (req, res) => {
   try {
     const { receiver, callType, startTime, endTime, duration, status, callId } = req.body;
     let call;

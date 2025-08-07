@@ -25,9 +25,11 @@ const AdminSignUp = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Admin Sign Up</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
+    <div className="max-w-md mx-auto my-8 p-8 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg bg-white dark:bg-gray-900">
+      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
+        Admin Sign Up
+      </h2>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <FormInput
           label="Name"
           type="text"
@@ -60,7 +62,12 @@ const AdminSignUp = () => {
           onChange={handleChange}
           placeholder="Confirm password"
         />
-        <button type="submit" style={styles.button}>Sign Up</button>
+        <button
+          type="submit"
+          className="py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold mt-4 transition-colors"
+        >
+          Sign Up
+        </button>
       </form>
     </div>
   );

@@ -19,14 +19,29 @@ passport.use(
           user = await User.findOne({ email: profile.emails[0].value });
         }
         if (!user) {
+          const trialStartDate = new Date();
+          const trialEndDate = new Date();
+          trialEndDate.setDate(trialStartDate.getDate() + 3); // 3 days free trial
+
+          const firstName =
+            profile.name?.givenName || profile.displayName || "Unknown";
+          const lastName = profile.name?.familyName || "";
+
           user = await User.create({
-            firstName: profile.name.givenName || "",
-            lastName: profile.name.familyName || "",
+            firstName,
+            lastName,
             email: profile.emails[0].value,
             googleId: profile.id,
             socialMediaLogin: true,
             isVerified: true,
             password: null,
+            isNewUser: true, // Explicitly set isNewUser to true
+            approvalStatus: "pending", // Explicitly set approvalStatus to pending
+            trial: {
+              startDate: trialStartDate,
+              endDate: trialEndDate,
+              isActive: true,
+            },
           });
         } else if (!user.googleId) {
           // Link Google account to existing user

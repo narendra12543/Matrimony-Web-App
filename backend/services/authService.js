@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Subscriber from "../models/Subscriber.js"; // <-- Add this import
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -23,15 +24,18 @@ export const registerUser = async ({
   }
   const existing = await User.findOne({ email });
   if (existing) throw new Error("Email already registered");
-  const hash = await bcrypt.hash(password, 10);
-  
+
   // Generate email verification token
   const emailVerificationToken = crypto.randomBytes(32).toString("hex");
-  const emailVerificationTokenHash = crypto.createHash("sha256").update(emailVerificationToken).digest("hex");
-  
+  const emailVerificationTokenHash = crypto
+    .createHash("sha256")
+    .update(emailVerificationToken)
+    .digest("hex");
+
+  // Create the user first (without subscriberId)
   const user = new User({
     email,
-    password: hash,
+    password,
     firstName,
     lastName,
     phone,
@@ -40,6 +44,19 @@ export const registerUser = async ({
     ...rest,
   });
   const userData = await user.save();
+
+  // Create the subscriber and link to user
+  const subscriber = new Subscriber({
+    name: `${firstName} ${lastName}`,
+    email,
+    // ...add other fields if needed
+  });
+  await subscriber.save();
+
+  // Link subscriberId to user and save
+  userData.subscriberId = subscriber._id;
+  await userData.save();
+
   const token = jwt.sign(
     { id: userData._id, email: userData.email, name: userData.name },
     JWT_SECRET,
@@ -53,6 +70,12 @@ export const registerUser = async ({
 export const loginUser = async ({ email, password }) => {
   const user = await User.findOne({ email });
   if (!user) throw new Error("Invalid credentials");
+  // Block login if account is suspended
+  if (user.accountStatus === "suspended") {
+    throw new Error(
+      "Your account has been disabled by admin. Please contact support for more details."
+    );
+  }
   const match = await bcrypt.compare(password, user.password);
   if (!match) throw new Error("Invalid credentials");
   const token = jwt.sign(

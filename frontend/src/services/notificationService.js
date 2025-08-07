@@ -1,26 +1,72 @@
+import axios from "axios";
+
+const API_URL = `${import.meta.env.VITE_API_URL}/api/v1`;
+
+const getNotifications = async () => {
+  const response = await axios.get(`${API_URL}/notifications`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+  return response.data;
+};
+
+const markAsRead = async (id) => {
+  const response = await axios.patch(
+    `${API_URL}/notifications/${id}/read`,
+    null,
+    {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    }
+  );
+  return response.data;
+};
+
+const markAllAsRead = async () => {
+  const response = await axios.patch(
+    `${API_URL}/notifications/read-all`,
+    null,
+    {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    }
+  );
+  return response.data;
+};
+
+const clearAllNotifications = async () => {
+  const response = await axios.delete(`${API_URL}/notifications/clear-all`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+  return response.data;
+};
+
+const deleteNotification = async (id) => {
+  const response = await axios.delete(`${API_URL}/notifications/${id}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+  return response.data;
+};
 class NotificationService {
   constructor() {
     this.permission = Notification.permission;
-    this.isSupported = 'Notification' in window;
+    this.isSupported = "Notification" in window;
   }
 
   async requestPermission() {
     if (!this.isSupported) {
-      console.log('This browser does not support notifications');
+      console.log("This browser does not support notifications");
       return false;
     }
 
-    if (this.permission === 'granted') {
+    if (this.permission === "granted") {
       return true;
     }
 
-    if (this.permission !== 'denied') {
+    if (this.permission !== "denied") {
       try {
         const permission = await Notification.requestPermission();
         this.permission = permission;
-        return permission === 'granted';
+        return permission === "granted";
       } catch (error) {
-        console.error('Error requesting notification permission:', error);
+        console.error("Error requesting notification permission:", error);
         return false;
       }
     }
@@ -29,31 +75,22 @@ class NotificationService {
   }
 
   showNotification({ title, body, icon, tag, data, onClick }) {
-    console.log('🔔 Attempting to show notification:', { title, body });
-    console.log('🔔 Permission status:', this.permission);
-    console.log('🔔 Is supported:', this.isSupported);
-    
-    if (!this.isSupported || this.permission !== 'granted') {
-      console.log('❌ Cannot show notification - not supported or no permission');
+    if (!this.isSupported || this.permission !== "granted") {
       return null;
     }
 
-    console.log('✅ Showing notification');
-    
     const notification = new Notification(title, {
       body,
-      icon: icon || undefined, // Remove favicon reference
-      tag: tag || 'chat-notification',
+      icon: icon || undefined,
+      tag: tag || "chat-notification",
       requireInteraction: false,
-      data: data || {}
+      data: data || {},
     });
 
-    // Auto close after 5 seconds
     setTimeout(() => {
       notification.close();
     }, 5000);
 
-    // Handle click
     notification.onclick = (event) => {
       event.preventDefault();
       window.focus();
@@ -65,50 +102,13 @@ class NotificationService {
 
     return notification;
   }
-
-  showMessageNotification({ senderName, message, avatar, chatId, onClick }) {
-    console.log('📨 Showing message notification from:', senderName);
-    
-    const title = `New message from ${senderName}`;
-    let body = message.content;
-
-    // Handle different message types
-    switch (message.messageType) {
-      case 'image':
-        body = '📷 Sent an image';
-        break;
-      case 'video':
-        body = '🎥 Sent a video';
-        break;
-      case 'document':
-        body = '📄 Sent a document';
-        break;
-      case 'file':
-        body = '📎 Sent a file';
-        break;
-      default:
-        // Limit text length
-        if (body && body.length > 50) {
-          body = body.substring(0, 50) + '...';
-        }
-    }
-
-    return this.showNotification({
-      title,
-      body,
-      icon: avatar || undefined, // Remove favicon reference
-      tag: `chat-${chatId}`,
-      data: { chatId, senderId: message.sender._id },
-      onClick
-    });
-  }
-
-  clearNotifications(tag) {
-    // This is a limitation of the Notification API
-    // We can't programmatically clear notifications
-    console.log(`Would clear notifications with tag: ${tag}`);
-  }
 }
 
+export {
+  getNotifications,
+  markAsRead,
+  markAllAsRead,
+  clearAllNotifications,
+  deleteNotification,
+};
 export default new NotificationService();
- 

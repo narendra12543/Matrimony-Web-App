@@ -1,15 +1,13 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, X, Plus } from 'lucide-react';
-import axios from 'axios';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Search, X, Plus } from "lucide-react";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const UserSearch = ({ isOpen, onClose, onChatCreate }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  console.log(users);
-  
 
   useEffect(() => {
     if (searchTerm.trim()) {
@@ -22,19 +20,24 @@ const UserSearch = ({ isOpen, onClose, onChatCreate }) => {
   const searchUsers = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      console.log('UserSearch: Searching with token:', !!token);
-      
-      const response = await axios.get(`http://localhost:5000/api/v1/chat/users/search?query=${searchTerm}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const token = localStorage.getItem("token");
+      console.log("UserSearch: Searching with token:", !!token);
+
+      const response = await axios.get(
+        `${
+          import.meta.env.VITE_API_URL
+        }/api/v1/chat/users/search?query=${searchTerm}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
       setUsers(response.data);
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error("Error searching users:", error);
       if (error.response?.status === 401) {
-        console.error('Auth error in user search');
+        console.error("Auth error in user search");
       }
     } finally {
       setLoading(false);
@@ -43,25 +46,29 @@ const UserSearch = ({ isOpen, onClose, onChatCreate }) => {
 
   const handleCreateChat = async (userId) => {
     try {
-      const token = localStorage.getItem('token');
-      console.log('UserSearch: Creating chat with token:', !!token);
-      
-      const response = await axios.post('http://localhost:5000/api/v1/chat', {
-        participantId: userId
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const token = localStorage.getItem("token");
+      console.log("UserSearch: Creating chat with token:", !!token);
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/chat `,
+        {
+          participantId: userId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
       onChatCreate(response.data);
       onClose();
-      toast.success('Chat started!');
+      toast.success("Chat started!");
     } catch (error) {
-      console.error('Error creating chat:', error);
+      console.error("Error creating chat:", error);
       if (error.response?.status === 401) {
-        toast.error('Authentication failed. Please login again.');
+        toast.error("Authentication failed. Please login again.");
       } else {
-        toast.error('Failed to start chat');
+        toast.error("Failed to start chat");
       }
     }
   };
@@ -117,10 +124,12 @@ const UserSearch = ({ isOpen, onClose, onChatCreate }) => {
                 <Search className="w-8 h-8 text-gray-400" />
               </div>
               <h4 className="text-lg font-semibold text-gray-700 mb-2">
-                {searchTerm ? 'No users found' : 'Start typing to search'}
+                {searchTerm ? "No users found" : "Start typing to search"}
               </h4>
               <p className="text-gray-500">
-                {searchTerm ? 'Try a different search term' : 'Enter a name or email to find people'}
+                {searchTerm
+                  ? "Try a different search term"
+                  : "Enter a name or email to find people"}
               </p>
             </div>
           ) : (
@@ -135,13 +144,15 @@ const UserSearch = ({ isOpen, onClose, onChatCreate }) => {
                 <div className="relative">
                   <div className="w-12 h-12 bg-gradient-to-r from-rose-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                     {user._doc.avatar ? (
-                      <img 
-                        src={user.avatar} 
+                      <img
+                        src={user.avatar}
                         alt={`${user._doc.firstName} ${user._doc.lastName}`}
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
-                      `${user._doc.firstName?.charAt(0) || ''}${user._doc.lastName?.charAt(0) || ''}`.toUpperCase()
+                      `${user._doc.firstName?.charAt(0) || ""}${
+                        user._doc.lastName?.charAt(0) || ""
+                      }`.toUpperCase()
                     )}
                   </div>
                   {user.isOnline && (
@@ -149,7 +160,9 @@ const UserSearch = ({ isOpen, onClose, onChatCreate }) => {
                   )}
                 </div>
                 <div className="ml-4 flex-1">
-                  <p className="font-bold text-gray-900 text-lg">{user._doc.firstName} {user._doc.lastName}</p>
+                  <p className="font-bold text-gray-900 text-lg">
+                    {user._doc.firstName} {user._doc.lastName}
+                  </p>
                   <p className="text-sm text-gray-600">{user._doc.email}</p>
                 </div>
                 <div className="ml-4">

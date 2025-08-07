@@ -1,57 +1,104 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from '../../../contexts/Chat/AuthContext';
-import { addVisitor } from '../../../services/visitorService';
-import { sendRequest } from '../../../services/requestService';
-import { getAllUsers } from '../../../services/userService';
-import { Heart, MessageCircle, Briefcase, GraduationCap, MapPin, Star, Filter } from "lucide-react";
+import { useAuth } from "../../../contexts/Chat/AuthContext";
+import { getMatchedUsers } from "../../../services/feedService";
+import { getUserRequests } from "../../../services/requestService";
+import {
+  MessageCircle,
+  Briefcase,
+  GraduationCap,
+  MapPin,
+  Star,
+  User,
+  Heart,
+} from "lucide-react";
 import BackButton from "../../BackButton";
+import { motion, AnimatePresence } from "framer-motion";
+import { Toaster } from "react-hot-toast";
+import { useRequest } from "../../../hooks/useRequest";
+import toast from "react-hot-toast";
+import { useTheme } from "../../../contexts/ThemeContext";
+import { getImageUrl } from "../../../utils/imageUtils";
 
-// Profile Card Component
-function ProfileCard({ profile, index, onViewProfile, onSendInvite, inviteStatus, onMessage }) {
-  const [isLiked, setIsLiked] = useState(false);
-  const [isMessageSent, setIsMessageSent] = useState(false);
-
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-  };
-
+function ProfileCard({
+  profile,
+  onViewProfile,
+  onSendInvite,
+  inviteStatus,
+  onMessage,
+  matchPercentage,
+}) {
   const handleMessage = (e) => {
     e.stopPropagation();
     if (onMessage) onMessage(profile);
   };
 
+  const cardVariants = {
+    hidden: { opacity: 0, y: 50, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 50,
+        damping: 20,
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: -30,
+      scale: 0.98,
+      transition: { duration: 0.2 },
+    },
+  };
+
   return (
-    <div
-      className="bg-white rounded-3xl overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] group cursor-pointer"
+    <motion.div
+      variants={cardVariants}
+      className="bg-white rounded-3xl overflow-hidden shadow-xl cursor-pointer border border-gray-100"
       onClick={() => onViewProfile(profile)}
+      whileHover={{
+        y: -8,
+        scale: 1.03,
+        boxShadow: "0 10px 25px -5px rgba(59, 130, 246, 0.3)",
+      }}
+      transition={{ type: "spring", stiffness: 300, damping: 15 }}
     >
       {/* Profile Image */}
       <div className="relative h-80 overflow-hidden flex items-center justify-center bg-gray-100">
-        {profile.photos && profile.photos.length > 0 ? (
-          <img
-            src={profile.photos[0]}
-            alt={profile.firstName + ' ' + profile.lastName}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-        ) : profile.avatar ? (
-          <img
-            src={profile.avatar}
-            alt={profile.firstName + ' ' + profile.lastName}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl font-bold text-purple-700 bg-gradient-to-br from-purple-100 to-pink-100">
-            {profile.firstName?.[0]}
-            {profile.lastName?.[0]}
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <motion.img
+          src={
+            getImageUrl(profile.photos && profile.photos[0]) ||
+            getImageUrl(profile.avatar) ||
+            "placeholder.jpg"
+          }
+          alt={`${profile.firstName} ${profile.lastName}`}
+          className="w-full h-full object-cover"
+          whileHover={{ scale: 1.1 }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
         {profile.verified && (
-          <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+          <motion.div
+            className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+          >
             <Star className="w-3 h-3 fill-current" />
             Verified
-          </div>
+          </motion.div>
+        )}
+        {matchPercentage !== undefined && matchPercentage !== null && (
+          <motion.div
+            className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+          >
+            {matchPercentage}% Match
+          </motion.div>
         )}
       </div>
 
@@ -59,134 +106,211 @@ function ProfileCard({ profile, index, onViewProfile, onSendInvite, inviteStatus
       <div className="p-6">
         {/* Header */}
         <div className="mb-4">
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">{profile.firstName} {profile.lastName}</h3>
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">
+            {profile.firstName} {profile.lastName}
+          </h3>
           <div className="flex items-center text-gray-600 mb-3">
-            <span className="font-medium">{profile.age ? `${profile.age} years` : ''}</span>
-            {profile.age && <span className="mx-2">•</span>}
+            <span className="font-medium">
+              {profile.age ? `${profile.age} years` : ""}
+            </span>
+            {profile.age && <span className="mx-2"> • </span>}
             <MapPin className="w-4 h-4 mr-1" />
-            <span>{profile.city}{profile.state ? `, ${profile.state}` : ''}</span>
+            <span>
+              {profile.city}
+              {profile.state ? `, ${profile.state}` : ""}
+            </span>
+            {profile.uniqueId && (
+              <>
+                <span className="mx-2"> • </span>
+                <span className="text-blue-600 font-semibold">
+                  {profile.uniqueId}
+                </span>
+              </>
+            )}
           </div>
         </div>
-
-        {/* Quote */}
-        {profile.quote && (
-          <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-xl mb-4 border-l-4 border-pink-400">
-            <p className="text-gray-700 italic text-sm leading-relaxed">{profile.quote}</p>
-          </div>
-        )}
 
         {/* Details */}
         <div className="space-y-3 mb-4">
-          <div className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
+          <div className="flex items-center p-3 bg-blue-50 rounded-xl">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
               <Briefcase className="w-4 h-4 text-white" />
             </div>
-            <span className="text-gray-700 font-medium">{profile.occupation || profile.job}</span>
+            <span className="text-gray-700 font-medium">
+              {profile.occupation || profile.job}
+            </span>
           </div>
-          <div className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-            <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mr-3">
+          <div className="flex items-center p-3 bg-blue-50 rounded-xl">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
               <GraduationCap className="w-4 h-4 text-white" />
             </div>
-            <span className="text-gray-700 font-medium">{profile.education}</span>
+            <span className="text-gray-700 font-medium">
+              {profile.education}
+            </span>
           </div>
         </div>
 
-        {/* Interests */}
-        {Array.isArray(profile.interests) && profile.interests.length > 0 && (
-          <div className="mb-6">
-            <h4 className="font-semibold text-gray-800 mb-3 text-sm uppercase tracking-wide">Interests</h4>
-            <div className="flex flex-wrap gap-2">
-              {profile.interests.slice(0, 4).map((interest, idx) => (
-                <span
-                  key={interest}
-                  className="bg-gradient-to-r from-pink-100 to-purple-100 text-gray-800 px-3 py-1 rounded-full text-xs font-medium hover:from-pink-200 hover:to-purple-200 transition-colors duration-200"
-                >
-                  {interest}
-                </span>
-              ))}
-              {profile.interests.length > 4 && (
-                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs">
-                  +{profile.interests.length - 4} more
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Action Buttons */}
-        <div className="flex gap-3">
-          <button
+        <div className="flex gap-3 mt-6">
+          <motion.button
             onClick={handleMessage}
-            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-              isMessageSent
-                ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                : "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-1"
-            }`}
+            className="flex-1 py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
+            whileHover={{
+              scale: 1.05,
+              y: -2,
+              boxShadow: "0px 10px 20px rgba(37, 99, 235, 0.2)",
+            }}
+            whileTap={{ scale: 0.95 }}
           >
             <MessageCircle className="w-4 h-4" />
             Message
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); onSendInvite(profile); }}
-            disabled={inviteStatus === 'sent' || inviteStatus === 'loading'}
-            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-              inviteStatus === 'sent'
-                ? 'bg-gradient-to-r from-green-400 to-green-600 text-white opacity-70 cursor-not-allowed'
-                : inviteStatus === 'loading'
-                  ? 'bg-gradient-to-r from-gray-400 to-gray-600 text-white opacity-70 cursor-wait'
-                  : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-1'
+          </motion.button>
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSendInvite(profile);
+            }}
+            disabled={inviteStatus !== "idle" && inviteStatus !== "received"}
+            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors duration-300 ${
+              inviteStatus === "sent"
+                ? "bg-blue-600 text-white cursor-not-allowed"
+                : inviteStatus === "pending"
+                ? "bg-blue-400 text-white cursor-not-allowed"
+                : "bg-blue-500 text-white hover:bg-blue-600"
             }`}
+            whileHover={{
+              scale: 1.05,
+              y: -2,
+              boxShadow: "0px 10px 20px rgba(37, 99, 235, 0.2)",
+            }}
+            whileTap={{ scale: 0.95 }}
           >
-            {inviteStatus === 'sent' ? 'Invitation Sent' : inviteStatus === 'loading' ? 'Sending...' : 'Send Invitation'}
-          </button>
+            {inviteStatus === "sent"
+              ? "Invitation Sent"
+              : inviteStatus === "pending"
+              ? "Request Pending"
+              : inviteStatus === "accepted"
+              ? "Request Accepted"
+              : inviteStatus === "rejected"
+              ? "Request Rejected"
+              : inviteStatus === "received"
+              ? "Respond to Request"
+              : inviteStatus === "loading"
+              ? "Sending..."
+              : "Send Invitation"}
+          </motion.button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-// Main Feed Component
 export default function MatrimonyFeed() {
   const [activeFilter, setActiveFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("any");
+  const [hobbiesFilter, setHobbiesFilter] = useState("");
+  const [interestsFilter, setInterestsFilter] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [inviteMap, setInviteMap] = useState({}); // { [profileId]: 'idle' | 'loading' | 'sent' }
+  const [inviteMap, setInviteMap] = useState({});
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { sendRequest: sendInvite, loading: requestLoading } = useRequest();
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
-    setLoading(true);
-    getAllUsers()
-      .then(data => {
-        setProfiles(Array.isArray(data) ? data : data.users || []);
-      })
-      .catch(() => setProfiles([]))
-      .finally(() => setLoading(false));
-  }, []);
+    const fetchProfilesAndRequests = async () => {
+      setLoading(true);
+      try {
+        const { profiles: fetchedProfiles } = await getMatchedUsers();
+        console.log("Fetched profiles:", fetchedProfiles); // Debug line
+        setProfiles(fetchedProfiles);
 
-  const filteredProfiles = profiles.filter((profile) => {
-    if (!user) return true; // If not logged in, show all
-    return profile._id !== user._id && (activeFilter === "all" || profile.category === activeFilter);
-  });
+        if (user && user._id) {
+          const userRequests = await getUserRequests();
+          const newInviteMap = {};
+          fetchedProfiles.forEach((profile) => {
+            if (!profile) return;
+            if (profile._id === user._id) return;
+            const sentRequest = userRequests.sent.find(
+              (req) => req.receiver && req.receiver._id === profile._id
+            );
+            if (sentRequest) {
+              newInviteMap[profile._id] = sentRequest.status;
+              return;
+            }
+            const receivedRequest = userRequests.received.find(
+              (req) => req.sender && req.sender._id === profile._id
+            );
+            if (receivedRequest) {
+              newInviteMap[profile._id] =
+                receivedRequest.status === "pending"
+                  ? "received"
+                  : receivedRequest.status;
+              return;
+            }
+            newInviteMap[profile._id] = "idle";
+          });
+          setInviteMap(newInviteMap);
+        }
+      } catch (error) {
+        console.error("Error fetching profiles or requests:", error);
+        setProfiles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfilesAndRequests();
+  }, [user]);
+
+  const filteredProfiles = (profiles || [])
+    .filter((profile) => {
+      if (!user) return true;
+
+      const matchesHobbies =
+        hobbiesFilter === "" ||
+        (profile.hobbies &&
+          profile.hobbies.toLowerCase().includes(hobbiesFilter.toLowerCase()));
+      const matchesInterests =
+        interestsFilter === "" ||
+        (profile.interests &&
+          profile.interests
+            .toLowerCase()
+            .includes(interestsFilter.toLowerCase()));
+
+      return (
+        profile._id &&
+        profile._id !== user._id &&
+        matchesHobbies &&
+        matchesInterests &&
+        (activeFilter === "all" ||
+          (activeFilter === "verified" && profile.isVerified))
+      );
+    })
+    .sort((a, b) => {
+      if (b.matchPercentage !== a.matchPercentage) {
+        return b.matchPercentage - a.matchPercentage;
+      }
+      if (a.isVerified && !b.isVerified) return -1;
+      if (!a.isVerified && b.isVerified) return 1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
 
   const filters = [
-    { key: "all", label: "All Profiles", count: profiles.length },
-    { key: "verified", label: "Verified", count: profiles.filter(p => p.verified).length },
-    { key: "nearby", label: "Nearby", count: profiles.filter(p => p.category === "nearby").length },
+    { key: "all", label: "All Profiles" },
+    { key: "verified", label: "Verified" },
   ];
 
-  const handleViewProfile = async (profile) => {
+  const handleViewProfile = (profile) => {
     navigate(`/profile/${profile._id}`);
   };
 
   const handleSendInvite = async (profile) => {
     if (!user || !profile._id || user._id === profile._id) return;
-    setInviteMap(prev => ({ ...prev, [profile._id]: 'loading' }));
-    try {
-      await sendRequest(profile._id);
-      setInviteMap(prev => ({ ...prev, [profile._id]: 'sent' }));
-    } catch (err) {
-      setInviteMap(prev => ({ ...prev, [profile._id]: 'idle' }));
+    const success = await sendInvite(profile._id);
+    if (success) {
+      setInviteMap((prev) => ({ ...prev, [profile._id]: "sent" }));
     }
   };
 
@@ -194,92 +318,160 @@ export default function MatrimonyFeed() {
     navigate(`/chat/${profile._id}`);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 py-4 md:py-8">
+    <div className="min-h-screen bg-white dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
+      <Toaster position="top-center" reverseOrder={false} />
+      <div className="max-w-7xl mx-auto">
         <div className="mb-4 md:mb-6">
           <BackButton />
         </div>
       </div>
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 py-4 md:py-8">
+      <main className="max-w-7xl mx-auto">
         {/* Hero Section */}
-        <div className="text-center mb-8 md:mb-12">
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2 md:mb-4">
+        <motion.div
+          className="text-center mb-8 md:mb-12"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent dark:from-blue-300 dark:to-blue-500 mb-2 md:mb-4">
             Find Your Perfect Match
           </h1>
-          <p className="text-base md:text-xl text-gray-600 max-w-2xl mx-auto mb-4 md:mb-8">
-            Discover meaningful connections with people who share your values, interests, and life goals
+          <p className="text-base md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-4 md:mb-8">
+            Discover meaningful connections with people who share your values,
+            interests, and life goals.
           </p>
           {/* Filter Buttons */}
           <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-6 md:mb-12">
             {filters.map((filter) => (
-              <button
+              <motion.button
                 key={filter.key}
                 onClick={() => setActiveFilter(filter.key)}
                 className={`px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold transition-all duration-300 flex items-center gap-2 ${
                   activeFilter === filter.key
-                    ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/30 transform -translate-y-1"
-                    : "bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg hover:-translate-y-1"
+                    ? "bg-blue-600 text-white shadow-lg"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md"
                 }`}
+                whileHover={{ y: -3, scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 15 }}
               >
                 {filter.label}
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  activeFilter === filter.key 
-                    ? "bg-white/20 text-white" 
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                  {filter.count}
-                </span>
-              </button>
+              </motion.button>
             ))}
           </div>
-        </div>
-        {/* Profiles Grid */}
-        {loading ? (
-          <div className="text-center text-gray-400 text-lg">Loading profiles...</div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-            {filteredProfiles.map((profile, index) => (
-              <div
-                key={profile._id}
-                className="opacity-0 animate-fade-in-up"
-                style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
-              >
-                <ProfileCard
-                  profile={profile}
-                  index={index}
-                  onViewProfile={handleViewProfile}
-                  onSendInvite={handleSendInvite}
-                  inviteStatus={inviteMap[profile._id] || 'idle'}
-                  onMessage={handleMessage}
+
+          {/* Filter Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 md:mb-12 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+              Filter Profiles
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {/* Hobbies Filter */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="hobbiesFilter"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1"
+                >
+                  <Heart className="w-4 h-4" /> Hobbies
+                </label>
+                <input
+                  id="hobbiesFilter"
+                  type="text"
+                  placeholder="e.g., reading, sports"
+                  value={hobbiesFilter}
+                  onChange={(e) => setHobbiesFilter(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600"
                 />
               </div>
-            ))}
+
+              {/* Interests Filter */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="interestsFilter"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1"
+                >
+                  <Star className="w-4 h-4" /> Interests
+                </label>
+                <input
+                  id="interestsFilter"
+                  type="text"
+                  placeholder="e.g., technology, art"
+                  value={interestsFilter}
+                  onChange={(e) => setInterestsFilter(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600"
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-4 mt-6">
+              <motion.button
+                onClick={() => {
+                  setGenderFilter("any");
+                  setHobbiesFilter("");
+                  setInterestsFilter("");
+                  setActiveFilter("all");
+                }}
+                className="px-6 py-2 rounded-full font-semibold text-sm transition-all duration-300 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Clear Filters
+              </motion.button>
+              <motion.button
+                className="px-6 py-2 rounded-full font-semibold text-sm transition-all duration-300 bg-blue-600 text-white shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Apply Filters
+              </motion.button>
+            </div>
           </div>
+        </motion.div>
+
+        {/* Profiles Grid */}
+        {loading ? (
+          <div className="text-center text-gray-500 dark:text-gray-300 text-lg">
+            Loading profiles...
+          </div>
+        ) : (
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <AnimatePresence>
+              {filteredProfiles.map((profile) => (
+                <ProfileCard
+                  key={
+                    profile._id
+                      ? String(profile._id)
+                      : `fallback-${Math.random()}`
+                  }
+                  profile={profile}
+                  onViewProfile={handleViewProfile}
+                  onSendInvite={handleSendInvite}
+                  inviteStatus={inviteMap[profile._id] || "idle"}
+                  onMessage={handleMessage}
+                  matchPercentage={profile.matchPercentage}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
-        {/* Load More Button */}
-        <div className="text-center mt-8 md:mt-12">
-          <button className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg hover:shadow-xl hover:shadow-pink-500/30 hover:-translate-y-1 transition-all duration-300">
-            Load More Profiles
-          </button>
-        </div>
       </main>
-      {/* Custom CSS for animations */}
-      <style>{`
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

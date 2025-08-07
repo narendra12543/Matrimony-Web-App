@@ -2,8 +2,8 @@ import express from "express";
 import {
   adminRegister,
   adminLogin,
-} from "../controllers/adminAuthController.js";
-import { adminGetMe } from "../controllers/adminAuthController.js";
+} from "../controllers/adminController/adminAuthController.js";
+import { adminGetMe } from "../controllers/adminController/adminAuthController.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
 
 const adminAuthRouter = express.Router();
